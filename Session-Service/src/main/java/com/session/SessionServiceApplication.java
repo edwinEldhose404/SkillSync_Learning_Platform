@@ -8,6 +8,7 @@ public class SessionServiceApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(SessionServiceApplication.class, args);
+		System.out.println("Starting Session Service...");
 	}
 
 }
