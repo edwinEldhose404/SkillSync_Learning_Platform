@@ -22,7 +22,7 @@ public class SessionController {
 	
 	@PostMapping(path = "/requestSession")
 	public ResponseEntity<Session> requestionNewSession(@RequestBody SessionDTO dto) {
-		Session session = service.requestSessionService(dto.getLearner_id(), dto.getMentor_id(), dto.getSession_Date());
+		Session session = service.requestSessionService(dto.getMentor_id(), dto.getLearner_id(), dto.getSession_Date());
 		return ResponseEntity.ok(session);
 	}
 	
@@ -34,13 +34,13 @@ public class SessionController {
 	
 	@PutMapping(path = "/rejectSession/{id}")
 	public ResponseEntity<Session> rejectSession(@PathVariable("id")int id) {
-		Session session = service.acceptSessionService(id);
+		Session session = service.rejectSessionService(id);
 		return ResponseEntity.ok(session);
 	}
 	
 	@PutMapping(path = "/cancelSession/{id}")
 	public ResponseEntity<Session> cancelSession(@PathVariable("id")int id) {
-		Session session = service.acceptSessionService(id);
+		Session session = service.cancelSessionService(id);
 		return ResponseEntity.ok(session);
 	}
 	

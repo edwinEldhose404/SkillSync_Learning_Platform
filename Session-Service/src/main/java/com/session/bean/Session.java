@@ -22,6 +22,9 @@ public class Session {
 	String status;
 	Date created_at;
 	
+	public Session() {
+	}
+	
 	public Session(int mentor_id,int learner_id, Date session_Date,String status,Date created_at){
 		this.mentor_id = mentor_id;
 		this.learner_id = learner_id;
