@@ -14,8 +14,8 @@ public class SessionService {
 	@Autowired
 	SessionDAO dao;
 	
-	public Session requestSessionService(int learner_id,int mentor_id, Date session_date) {
-		return dao.requestSession(learner_id, mentor_id, session_date);
+	public Session requestSessionService(int mentor_id,int learner_id, Date session_date) {
+		return dao.requestSession(mentor_id, learner_id, session_date);
 	}
 	
 	public Session acceptSessionService(int id) {
