@@ -10,13 +10,15 @@ public class NotificationService {
 
         String type = event.getEventType();
 
-        if ("SESSION_BOOKED".equals(type)) {
+        if ("REQUESTED".equals(type)) {
             System.out.println("Notification: Session Booked " + event.getSessionId());
-        } else if ("SESSION_ACCEPTED".equals(type)) {
+        } else if ("ACCEPTED".equals(type)) {
             System.out.println("Notification: Session Accepted " + event.getSessionId());
-        } else if ("SESSION_REMINDER".equals(type)) {
+        } else if ("REMINDER".equals(type)) {
             System.out.println("Notification: Session Reminder " + event.getSessionId());
-        } else if ("MENTOR_APPROVED".equals(type)) {
+        } else if ("CANCELLED".equals(type)) {
+            System.out.println("Notification: Mentor Approved " + event.getMentorId());
+        } else if ("REJECTED".equals(type)) {
             System.out.println("Notification: Mentor Approved " + event.getMentorId());
         }
     }
