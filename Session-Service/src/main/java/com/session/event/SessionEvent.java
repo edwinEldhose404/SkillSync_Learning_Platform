@@ -1,7 +1,5 @@
 package com.session.event;
 
-import java.io.Serializable;
-
 public class SessionEvent implements Serializable{
 
     private String eventType;
