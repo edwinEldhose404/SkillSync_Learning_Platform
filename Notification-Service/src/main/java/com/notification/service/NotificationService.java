@@ -17,9 +17,9 @@ public class NotificationService {
         } else if ("REMINDER".equals(type)) {
             System.out.println("Notification: Session Reminder " + event.getSessionId());
         } else if ("CANCELLED".equals(type)) {
-            System.out.println("Notification: Mentor Approved " + event.getMentorId());
+            System.out.println("Notification: Session Cancelled " + event.getSessionId());
         } else if ("REJECTED".equals(type)) {
-            System.out.println("Notification: Mentor Approved " + event.getMentorId());
+            System.out.println("Notification: Session Rejected " + event.getSessionId());
         }
     }
 }

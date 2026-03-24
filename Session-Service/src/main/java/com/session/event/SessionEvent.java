@@ -1,6 +1,8 @@
 package com.session.event;
 
-public class SessionEvent {
+import java.io.Serializable;
+
+public class SessionEvent implements Serializable{
 
     private String eventType;
     private Long sessionId;
