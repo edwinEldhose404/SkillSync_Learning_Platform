@@ -5,6 +5,7 @@ import java.util.Date;
 import org.springframework.stereotype.Repository;
 
 import com.session.bean.Session;
+import com.session.exception.SessionNotFoundException;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -26,6 +27,9 @@ public class SessionDAO {
 	
 	public Session acceptSession(int id) {
 		Session session = em.find(Session.class, id);
+		if (session == null) {
+			throw new SessionNotFoundException("Session with id " + id + " not found", id);
+		}
 		session.setStatus("Accepted");
 		session = em.merge(session);
 		return session;
@@ -33,6 +37,9 @@ public class SessionDAO {
 	
 	public Session rejectSession(int id) {
 		Session session = em.find(Session.class, id);
+		if (session == null) {
+			throw new SessionNotFoundException("Session with id " + id + " not found", id);
+		}
 		session.setStatus("Rejected");
 		session = em.merge(session);
 		return session;
@@ -40,6 +47,9 @@ public class SessionDAO {
 	
 	public Session cancelSession(int id) {
 		Session session = em.find(Session.class, id);
+		if (session == null) {
+			throw new SessionNotFoundException("Session with id " + id + " not found", id);
+		}
 		session.setStatus("Cancelled");
 		session = em.merge(session);
 		return session;
