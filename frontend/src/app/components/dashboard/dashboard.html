@@ -1,0 +1,13 @@
+<div class="box">
+  <h2>Dashboard</h2>
+
+  <button (click)="loadUsers()">Users</button>
+  <div *ngFor="let u of data">
+  {{u.name}} - {{u.email}}
+    </div>
+  <button (click)="loadMentors()">Mentors</button>
+  <button (click)="loadSkills()">Skills</button>
+  <button (click)="loadGroups()">Groups</button>
+
+  <pre>{{data | json}}</pre>
+</div>

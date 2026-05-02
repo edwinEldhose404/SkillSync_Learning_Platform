@@ -1,0 +1,42 @@
+<style>
+body {
+  background: black;
+  color: white;
+  font-family: Arial;
+}
+
+.box {
+  width: 300px;
+  margin: 50px auto;
+  border: 1px solid white;
+  padding: 20px;
+}
+
+input {
+  width: 100%;
+  margin: 5px 0;
+  padding: 8px;
+  background: black;
+  color: white;
+  border: 1px solid white;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  background: white;
+  color: black;
+  border: none;
+}
+
+pre {
+  margin-top: 20px;
+  border: 1px solid white;
+  padding: 10px;
+}
+</style>
+
+<app-login *ngIf="!token"></app-login>
+<button *ngIf="token" (click)="logout()">Logout</button>
+<app-dashboard *ngIf="token"></app-dashboard>
