@@ -16,12 +16,13 @@ public class JwtUtil {
 
     private static final long EXPIRATION_TIME = 1000 * 60 * 60; // 1 hour
 
-    // ✅ Generate token with role
-    public static String generateToken(String email, String role) {
+    // ✅ Generate token with role and userId
+    public static String generateToken(String email, String role, Long userId) {
 
         return Jwts.builder()
                 .setSubject(email)
                 .claim("role", role)
+                .claim("userId", userId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(SECRET_KEY)
@@ -46,6 +47,16 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody()
                 .get("role", String.class);
+    }
+
+    // ✅ extract userId
+    public static Long extractUserId(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(SECRET_KEY)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("userId", Long.class);
     }
 
     // ✅ validate token

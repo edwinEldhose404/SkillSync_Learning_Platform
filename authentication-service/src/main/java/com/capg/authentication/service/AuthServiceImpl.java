@@ -50,7 +50,7 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepository.save(user);
 
         // Generate JWT immediately
-        String token = JwtUtil.generateToken(savedUser.getEmail(), savedUser.getRole().name());
+        String token = JwtUtil.generateToken(savedUser.getEmail(), savedUser.getRole().name(), savedUser.getId());
 
         //Call user-service (Feign)
         try {
@@ -80,7 +80,7 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Invalid credentials");
         }
 
-        String token = JwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        String token = JwtUtil.generateToken(user.getEmail(), user.getRole().name(), user.getId());
 
         return new AuthResponse("Login successful", token);
     }
@@ -93,9 +93,25 @@ public class AuthServiceImpl implements AuthService {
 
         String email = JwtUtil.extractEmail(token);
         String role = JwtUtil.extractRole(token);
+        Long userId = JwtUtil.extractUserId(token);
 
-        String newToken = JwtUtil.generateToken(email, role);
+        String newToken = JwtUtil.generateToken(email, role, userId);
 
         return new AuthResponse("Token refreshed successfully", newToken);
+    }
+
+    @Override
+    public void updateRole(String email, String role) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+        user.setRole(com.capg.authentication.enums.Role.valueOf(role.toUpperCase()));
+        userRepository.save(user);
+        logger.info("Updated role for {} to {}", email, role);
+    }
+
+    @Override
+    public Object getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
     }
 }

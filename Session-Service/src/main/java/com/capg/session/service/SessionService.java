@@ -237,7 +237,34 @@ public class SessionService {
 	 * @return List of Session objects
 	 */
 	public java.util.List<Session> getSessionsByUser(int userId) {
-		return dao.getSessionsByUserId(userId);
+		System.out.println("[SkillSync DEBUG] Fetching sessions for User ID: " + userId);
+		java.util.List<Session> allSessions = new java.util.ArrayList<>(dao.getSessionsByUserId(userId));
+		System.out.println("[SkillSync DEBUG] Found " + allSessions.size() + " sessions as Learner (or User ID match)");
+		
+		// If this user is a mentor, also fetch sessions where they are the mentor
+		try {
+			ApiResponse<MentorResponse> mentor = mentorServiceClient.getMentorByUserId((long) userId);
+			if (mentor != null && mentor.getData() != null) {
+				int mentorId = mentor.getData().getId().intValue();
+				System.out.println("[SkillSync DEBUG] User " + userId + " is a Mentor with Mentor ID: " + mentorId);
+				if (mentorId != userId) {
+					java.util.List<Session> mentorSessions = dao.getSessionsByUserId(mentorId);
+					System.out.println("[SkillSync DEBUG] Found " + mentorSessions.size() + " additional sessions for Mentor ID: " + mentorId);
+					for (Session s : mentorSessions) {
+						if (allSessions.stream().noneMatch(existing -> existing.getId() == s.getId())) {
+							allSessions.add(s);
+						}
+					}
+				}
+			} else {
+				System.out.println("[SkillSync DEBUG] User " + userId + " is NOT recognized as a Mentor by the Mentor Service");
+			}
+		} catch (Exception e) {
+			System.err.println("[SkillSync DEBUG] Error fetching Mentor ID for User " + userId + ": " + e.getMessage());
+		}
+		
+		System.out.println("[SkillSync DEBUG] Returning total sessions: " + allSessions.size());
+		return allSessions;
 	}
 
 	/**
@@ -247,7 +274,7 @@ public class SessionService {
 	 * @return List of Session objects
 	 */
 	public java.util.List<Session> getMySessionService(int userId) {
-		return dao.getSessionsByUserId(userId);
+		return getSessionsByUser(userId);
 	}
 
 	/**
@@ -258,5 +285,9 @@ public class SessionService {
 	 */
 	public Session getSessionByIdService(int id) {
 		return dao.getSessionById(id);
+	}
+
+	public java.util.List<Session> getAllSessions() {
+		return dao.getAllSessions();
 	}
 }

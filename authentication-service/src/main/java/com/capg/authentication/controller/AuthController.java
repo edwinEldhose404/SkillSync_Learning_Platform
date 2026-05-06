@@ -79,4 +79,17 @@ public class AuthController {
     public String userTest() {
         return "User access";
     }
+
+    /**
+     * Update user role (Admin only)
+     */
+    @PutMapping("/admin/role")
+    public void updateRole(@RequestParam String email, @RequestParam String role) {
+        authService.updateRole(email, role);
+    }
+
+    @GetMapping("/user/{id}")
+    public Object getUserById(@PathVariable Long id) {
+        return authService.getUserById(id);
+    }
 }

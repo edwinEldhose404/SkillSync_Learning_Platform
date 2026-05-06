@@ -18,4 +18,5 @@ public interface GroupService {
     ApiResponse<String> removeMember(String adminEmail, Long groupId, String targetEmail);
     List<GroupResponse> getAllGroups();
     List<GroupMember> getGroupMembers(Long groupId);
+    void deleteGroup(String email, Long groupId, boolean isAdmin);
 }

@@ -12,4 +12,7 @@ public interface MentorServiceClient {
     
     @GetMapping("/mentors/public/{id}")
     ApiResponse<MentorResponse> getMentorById(@PathVariable("id") Long id);
+
+    @GetMapping("/mentors/user/{userId}")
+    ApiResponse<MentorResponse> getMentorByUserId(@PathVariable("userId") Long userId);
 }

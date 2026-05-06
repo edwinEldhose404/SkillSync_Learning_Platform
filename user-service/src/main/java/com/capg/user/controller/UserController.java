@@ -1,7 +1,6 @@
 package com.capg.user.controller;
 
 import com.capg.user.dto.UserDto;
-;
 import com.capg.user.dto.request.AdminUpdateProfileRequest;
 import com.capg.user.dto.request.CreateProfileRequest;
 import com.capg.user.dto.request.UpdateProfileRequest;
@@ -202,5 +201,10 @@ public class UserController {
     public ResponseEntity<Void> updateUserRole(@RequestParam Long id, @RequestParam String role){
         service.updateUserRole(id, role);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/email")
+    public UserDto getUserByEmail(@RequestParam String email) {
+        return service.getUserById(service.getUserByEmail(email).getUserId());
     }
 }

@@ -69,10 +69,17 @@ class AuthServiceImplTest {
     void register_NewUser_Success() {
         when(userRepository.findByEmail(registerRequest.getEmail())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(registerRequest.getPassword())).thenReturn("encoded_password");
-        when(userRepository.save(any(User.class))).thenReturn(setupUser);
+        
+        // Mock save to return a user with an ID
+        User savedUserWithId = new User();
+        savedUserWithId.setId(1L);
+        savedUserWithId.setName(setupUser.getName());
+        savedUserWithId.setEmail(setupUser.getEmail());
+        savedUserWithId.setRole(setupUser.getRole());
+        when(userRepository.save(any(User.class))).thenReturn(savedUserWithId);
 
         try (MockedStatic<JwtUtil> jwtUtilMockedStatic = mockStatic(JwtUtil.class)) {
-            jwtUtilMockedStatic.when(() -> JwtUtil.generateToken(anyString(), anyString())).thenReturn("mocked_jwt_token");
+            jwtUtilMockedStatic.when(() -> JwtUtil.generateToken(anyString(), anyString(), anyLong())).thenReturn("mocked_jwt_token");
 
             AuthResponse response = authService.register(registerRequest);
 
@@ -99,11 +106,13 @@ class AuthServiceImplTest {
 
     @Test
     void login_ValidCredentials_ReturnsToken() {
+        // Setup user with ID
+        setupUser.setId(1L);
         when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(setupUser));
         when(passwordEncoder.matches(loginRequest.getPassword(), setupUser.getPassword())).thenReturn(true);
 
         try (MockedStatic<JwtUtil> jwtUtilMockedStatic = mockStatic(JwtUtil.class)) {
-            jwtUtilMockedStatic.when(() -> JwtUtil.generateToken(setupUser.getEmail(), setupUser.getRole().name()))
+            jwtUtilMockedStatic.when(() -> JwtUtil.generateToken(setupUser.getEmail(), setupUser.getRole().name(), setupUser.getId()))
                     .thenReturn("mocked_jwt_token");
 
             AuthResponse response = authService.login(loginRequest);
@@ -135,7 +144,8 @@ class AuthServiceImplTest {
             jwtUtilMockedStatic.when(() -> JwtUtil.validateToken(oldToken)).thenReturn(true);
             jwtUtilMockedStatic.when(() -> JwtUtil.extractEmail(oldToken)).thenReturn("john@example.com");
             jwtUtilMockedStatic.when(() -> JwtUtil.extractRole(oldToken)).thenReturn("USER");
-            jwtUtilMockedStatic.when(() -> JwtUtil.generateToken("john@example.com", "USER")).thenReturn(newToken);
+            jwtUtilMockedStatic.when(() -> JwtUtil.extractUserId(oldToken)).thenReturn(1L);
+            jwtUtilMockedStatic.when(() -> JwtUtil.generateToken("john@example.com", "USER", 1L)).thenReturn(newToken);
 
             AuthResponse response = authService.refresh(oldToken);
 

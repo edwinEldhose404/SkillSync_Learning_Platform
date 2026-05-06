@@ -134,6 +134,15 @@ public class SessionController {
 	}
 
 	/**
+	 * AUDIT: Get every session in the database
+	 */
+	@org.springframework.web.bind.annotation.GetMapping(path = "/all")
+	@PreAuthorize("permitAll()")
+	public ResponseEntity<java.util.List<Session>> getAllSessions() {
+		return ResponseEntity.ok(service.getAllSessions());
+	}
+
+	/**
 	 * Get a single session record by its ID.
 	 *
 	 * Allows mentors and users to retrieve the details of a specific session.

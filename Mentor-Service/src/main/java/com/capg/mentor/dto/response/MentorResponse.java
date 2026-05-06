@@ -18,4 +18,5 @@ public class MentorResponse{
     private Double hourlyRate;
     private List<Long> skillId;
     private List<String> skills;
+    private String status;
 }

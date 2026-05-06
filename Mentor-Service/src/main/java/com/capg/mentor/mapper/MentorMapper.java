@@ -39,7 +39,17 @@ public class MentorMapper {
 
     //Convert Entity → Response DTO
     public static MentorResponse toResponse(Mentor mentor, List<Long> skillIds, SkillClient client) {
-        List<String> skill = skillIds.stream().map(id -> client.getSkillById(id).getName()).toList();
+        List<String> skillNames = skillIds.stream()
+                .map(id -> {
+                    try {
+                        var s = client.getSkillById(id);
+                        return s != null ? s.getName() : "Unknown Skill (" + id + ")";
+                    } catch (Exception e) {
+                        return "Unknown Skill (" + id + ")";
+                    }
+                })
+                .toList();
+
         return MentorResponse.builder()
                 .id(mentor.getMentorId())
                 .userId(mentor.getUserId())
@@ -48,7 +58,8 @@ public class MentorMapper {
                 .rating(mentor.getRating())
                 .hourlyRate(mentor.getHourlyRate())
                 .skillId(skillIds)
-                .skills(skill)
+                .skills(skillNames)
+                .status(mentor.getStatus() != null ? mentor.getStatus().name() : "PENDING")
                 .build();
     }
 

@@ -8,7 +8,9 @@ import com.capg.group.service.GroupService;
 
 import java.util.List;
 import com.capg.group.dto.GroupResponse;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,7 +55,7 @@ public class GroupController {
      * @param request CreateGroupRequest containing group details
      * @return Group representing the created group
      */
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')")
     @PostMapping
     public Group createGroup(@RequestBody CreateGroupRequest request) {
 
@@ -72,9 +74,9 @@ public class GroupController {
      * @return String with success message
      * @throws RuntimeException if user is not a member or is the only admin
      */
-    @PreAuthorize("hasAnyRole('USER','MENTOR')")
+    @PreAuthorize("hasAnyRole('USER', 'MENTOR')")
     @PostMapping("/{groupId}/leave")
-    public String leaveGroup(@PathVariable Long groupId) {
+    public ResponseEntity<String> leaveGroup(@PathVariable Long groupId) {
 
         String email = SecurityContextHolder
                 .getContext()
@@ -83,7 +85,27 @@ public class GroupController {
 
         service.leaveGroup(email, groupId);
 
-        return "Left group successfully";
+        return ResponseEntity.ok("Left group successfully");
+    }
+
+    /**
+     * Delete a group (Creator only)
+     * 
+     * @param groupId ID of the group to delete
+     * @return Success message
+     */
+    @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR', 'USER')")
+    @DeleteMapping("/{groupId}")
+    public ResponseEntity<String> deleteGroup(@PathVariable Long groupId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+        
+        // Check if the user has the ADMIN role globally
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        service.deleteGroup(email, groupId, isAdmin);
+        return ResponseEntity.ok("Group deleted successfully");
     }
 
     /**
@@ -114,9 +136,9 @@ public class GroupController {
      * @return String with success message
      * @throws RuntimeException if group not found or user is already a member
      */
-    @PreAuthorize("hasAnyRole('USER','MENTOR')")
+    @PreAuthorize("hasAnyRole('USER', 'MENTOR')")
     @PostMapping("/{groupId}/join")
-    public String joinGroup(@PathVariable Long groupId) {
+    public ResponseEntity<String> joinGroup(@PathVariable Long groupId) {
 
         String email = SecurityContextHolder
                 .getContext()
@@ -125,7 +147,7 @@ public class GroupController {
 
         service.joinGroup(email, groupId);
 
-        return "Joined group successfully";
+        return ResponseEntity.ok("Joined group successfully");
     }
 
     /**

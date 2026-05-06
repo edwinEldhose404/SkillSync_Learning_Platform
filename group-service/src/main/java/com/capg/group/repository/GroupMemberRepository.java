@@ -12,7 +12,7 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> 
 
     List<GroupMember> findByUserEmail(String email);
 
-    Optional<GroupMember> findByGroupIdAndUserEmail(Long groupId, String email);
+    Optional<GroupMember> findByGroupIdAndUserEmailIgnoreCase(Long groupId, String email);
 
     long countByGroupIdAndRole(Long groupId, String role);
 }

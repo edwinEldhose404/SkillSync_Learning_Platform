@@ -7,7 +7,8 @@ import jakarta.persistence.*;
 public class GroupMember {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "group_member_seq")
+    @SequenceGenerator(name = "group_member_seq", sequenceName = "group_member_seq", allocationSize = 1)
     private Long id;
 
     private Long groupId;

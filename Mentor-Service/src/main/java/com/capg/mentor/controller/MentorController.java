@@ -8,6 +8,7 @@ import com.capg.mentor.dto.response.MentorResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -47,20 +48,21 @@ public class MentorController {
      */
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/apply")
-    public ApiResponse<MentorResponse> applyForMentor(
+    public ResponseEntity<ApiResponse<MentorResponse>> applyForMentor(
             @Valid @RequestBody MentorRequest request) {
 
+        System.out.println("DEBUG: Received applyForMentor request for user: " + request.getUserId());
         // Inject logged-in user email from JWT
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         request.setEmail(email);
 
         MentorResponse response = mentorService.applyForMentor(request);
 
-        return ApiResponse.<MentorResponse>builder()
+        return ResponseEntity.ok(ApiResponse.<MentorResponse>builder()
                 .success(true)
                 .message("Mentor application submitted successfully")
                 .data(response)
-                .build();
+                .build());
     }
 
     /**
@@ -100,6 +102,19 @@ public class MentorController {
     }
 
     /**
+     * Retrieve a mentor by User ID
+     */
+    @GetMapping("/user/{userId}")
+    public ApiResponse<MentorResponse> getMentorByUserId(@PathVariable Long userId) {
+        MentorResponse mentor = mentorService.getMentorByUserId(userId);
+        return ApiResponse.<MentorResponse>builder()
+                .success(true)
+                .message("Mentor resolved successfully")
+                .data(mentor)
+                .build();
+    }
+
+    /**
      * Add availability slot for a mentor
      * 
      * @param id Mentor ID
@@ -126,6 +141,23 @@ public class MentorController {
                 .success(true)
                 .message("Availability added successfully")
                 .data(null)
+                .build();
+    }
+
+    /**
+     * Get mentors by status (Admin only)
+     * 
+     * @param status Mentor status (PENDING, APPROVED, etc.)
+     * @return ApiResponse containing list of MentorResponse
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/status/{status}")
+    public ApiResponse<List<MentorResponse>> getMentorsByStatus(@PathVariable String status) {
+        List<MentorResponse> mentors = mentorService.getMentorsByStatus(status);
+        return ApiResponse.<List<MentorResponse>>builder()
+                .success(true)
+                .message("Fetched " + status + " mentors")
+                .data(mentors)
                 .build();
     }
 

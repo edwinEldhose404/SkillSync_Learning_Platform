@@ -17,6 +17,9 @@ public interface UserClient {
     @GetMapping("/users/{id}")
     UserDto getUserById(@PathVariable Long id);
 
+    @GetMapping("/users/email")
+    UserDto getUserByEmail(@RequestParam("email") String email);
+
     @PutMapping("/users/admin/role")
     ResponseEntity<Void> updateUserRole(@RequestParam Long id, @RequestParam String role);
 }

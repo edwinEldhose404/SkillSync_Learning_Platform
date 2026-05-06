@@ -56,10 +56,6 @@ public class ReviewServiceImpl implements ReviewService {
     //GET REVIEWS BY MENTOR
     @Override
     public List<ReviewResponse> getReviewsByMentor(Long mentorId) {
-        Object mentor = mentorClient.getMentorById(mentorId);
-        if (mentor == null) {
-            throw new ResourceNotFoundException("Mentor not found");
-        }
         List<Review> reviews = reviewRepository.findByMentorId(mentorId);
 
         return reviews.stream()

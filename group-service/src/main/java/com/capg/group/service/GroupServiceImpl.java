@@ -12,6 +12,7 @@ import com.capg.group.repository.GroupRepository;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Group Service Implementation
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
  * - RuntimeException: Thrown when user is already a member, not a member, or removing last admin (HTTP 400)
  */
 @Service
+@Transactional
 public class GroupServiceImpl implements GroupService {
 
     private final GroupRepository groupRepository;
@@ -43,17 +45,17 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public Group createGroup(String email, CreateGroupRequest request) {
 
-        // email is already validated by JWT — no user-service call needed
+        String normalizedEmail = email.toLowerCase().trim();
         Group group = new Group();
         group.setName(request.getName());
         group.setDescription(request.getDescription());
-        group.setCreatedBy(email);
+        group.setCreatedBy(normalizedEmail);
 
         Group savedGroup = groupRepository.save(group);
 
         GroupMember member = new GroupMember();
         member.setGroupId(savedGroup.getId());
-        member.setUserEmail(email);
+        member.setUserEmail(normalizedEmail);
         member.setRole("ADMIN");
 
         memberRepository.save(member);
@@ -70,19 +72,21 @@ public class GroupServiceImpl implements GroupService {
 	 */
 	@Override
 	public void joinGroup(String email, Long groupId) {
+        String normalizedEmail = email.toLowerCase().trim();
+        
 		 // 1. Check group exists
 	    Group group = groupRepository.findById(groupId)
 	            .orElseThrow(() -> new RuntimeException("Group not found"));
 
-	    // 2. Check already joined
-	    if (memberRepository.findByGroupIdAndUserEmail(groupId, email).isPresent()) {
-	        throw new RuntimeException("Already a member");
+	    // 2. Check already joined (Case-Insensitive)
+	    if (memberRepository.findByGroupIdAndUserEmailIgnoreCase(groupId, normalizedEmail).isPresent()) {
+	        return; // Already a member, nothing to do
 	    }
 
 	    // 3. Add member
 	    GroupMember member = new GroupMember();
 	    member.setGroupId(groupId);
-	    member.setUserEmail(email);
+	    member.setUserEmail(normalizedEmail);
 	    member.setRole("MEMBER");
 
 	    memberRepository.save(member);
@@ -101,20 +105,24 @@ public class GroupServiceImpl implements GroupService {
 		Group group = groupRepository.findById(groupId)
 	            .orElseThrow(() -> new ResourceNotFoundException("Group not found"));
 
-	    var members = memberRepository.findByGroupId(groupId)
-	            .stream()
-	            .map(m -> new MemberDto(m.getUserEmail(), m.getRole()))
-	            .toList();
-
-	    GroupResponse response = new GroupResponse();
-	    response.setId(group.getId());
-	    response.setName(group.getName());
-	    response.setDescription(group.getDescription());
-	    response.setCreatedBy(group.getCreatedBy());
-	    response.setMembers(members);
-
-	    return response;
+		return mapToResponse(group);
 	}
+
+    private GroupResponse mapToResponse(Group group) {
+        GroupResponse response = new GroupResponse();
+        response.setId(group.getId());
+        response.setName(group.getName());
+        response.setDescription(group.getDescription());
+        response.setCreatedBy(group.getCreatedBy());
+        
+        // Ensure members list is always populated
+        List<MemberDto> members = memberRepository.findByGroupId(group.getId()).stream()
+            .map(m -> new MemberDto(m.getUserEmail(), m.getRole()))
+            .toList();
+        response.setMembers(members);
+        
+        return response;
+    }
 
 	/**
 	 * Leave a group
@@ -125,22 +133,64 @@ public class GroupServiceImpl implements GroupService {
 	 */
 	@Override
 	public void leaveGroup(String email, Long groupId) {
-		 GroupMember member = memberRepository
-		            .findByGroupIdAndUserEmail(groupId, email).orElseThrow(() -> new RuntimeException("Not a member of this group"));
+        String normalizedEmail = email.toLowerCase().trim();
+        
+        List<GroupMember> allMembers = memberRepository.findByGroupId(groupId);
+        System.out.println("LEAVE GROUP DEBUG: Looking for " + normalizedEmail + " in group " + groupId);
+        
+        GroupMember targetMember = null;
+        for (GroupMember m : allMembers) {
+            System.out.println("DEBUG: Member in DB: [" + m.getUserEmail() + "]");
+            if (m.getUserEmail() != null && m.getUserEmail().trim().equalsIgnoreCase(normalizedEmail)) {
+                targetMember = m;
+                break;
+            }
+        }
+        
+        if (targetMember == null) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Not a member of this group: ").append(normalizedEmail).append(" | Members in DB: ");
+            for (GroupMember m : allMembers) {
+                sb.append("[").append(m.getUserEmail()).append("]");
+            }
+            throw new RuntimeException(sb.toString());
+        }
 
-		    // 🔥 If ADMIN → check if last admin
-		    if ("ADMIN".equals(member.getRole())) {
+        try {
+            // Null-safe role check
+            if ("ADMIN".equals(targetMember.getRole())) {
+                long adminCount = memberRepository.countByGroupIdAndRole(groupId, "ADMIN");
+                if (adminCount <= 1) {
+                    throw new RuntimeException("Cannot leave as the only admin. Delete the group instead.");
+                }
+            }
 
-		        long adminCount = memberRepository
-		                .countByGroupIdAndRole(groupId, "ADMIN");
+            memberRepository.delete(targetMember);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed during delete or admin check: " + e.getMessage() + " | Type: " + e.getClass().getName());
+        }
+	}
 
-		        if (adminCount == 1) {
-		            throw new RuntimeException("Cannot leave as the only admin");
-		        }
-		    }
+	@Override
+	public void deleteGroup(String email, Long groupId, boolean isAdmin) {
+        String normalizedEmail = email.toLowerCase().trim();
+        
+	    Group group = groupRepository.findById(groupId)
+	            .orElseThrow(() -> new RuntimeException("Group not found"));
 
-		    memberRepository.delete(member);
-		
+	    // Check if user is either the creator OR a global admin
+	    boolean isCreator = group.getCreatedBy() != null && group.getCreatedBy().equalsIgnoreCase(normalizedEmail);
+	    
+	    if (!isCreator && !isAdmin) {
+	        throw new RuntimeException("Only the creator or a global admin can delete this group");
+	    }
+
+	    // Remove all members first
+	    List<GroupMember> members = memberRepository.findByGroupId(groupId);
+	    memberRepository.deleteAll(members);
+
+	    // Delete the group
+	    groupRepository.delete(group);
 	}
 
 	/**
@@ -158,7 +208,7 @@ public class GroupServiceImpl implements GroupService {
 
 		    // 1. Check admin
 		    GroupMember admin = memberRepository
-		            .findByGroupIdAndUserEmail(groupId, adminEmail).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+		            .findByGroupIdAndUserEmailIgnoreCase(groupId, adminEmail).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
 		    if (!"ADMIN".equals(admin.getRole())) {
 				return ApiResponse.<String>builder()
@@ -170,7 +220,7 @@ public class GroupServiceImpl implements GroupService {
 
 		    // 2. Find target
 		    GroupMember target = memberRepository
-		            .findByGroupIdAndUserEmail(groupId, targetEmail).orElseThrow(()-> new RuntimeException("User not in group"));
+		            .findByGroupIdAndUserEmailIgnoreCase(groupId, targetEmail).orElseThrow(()-> new RuntimeException("User not in group"));
 
 		    // 3. Prevent removing last admin
 		    if ("ADMIN".equals(target.getRole())) {
@@ -216,6 +266,12 @@ public class GroupServiceImpl implements GroupService {
 	                response.setDescription(group.getDescription());
 	                response.setCreatedBy(group.getCreatedBy());
 
+                  // Populate members
+                  List<MemberDto> members = memberRepository.findByGroupId(group.getId()).stream()
+                      .map(m -> new MemberDto(m.getUserEmail(), m.getRole()))
+                      .toList();
+                  response.setMembers(members);
+
 	                return response;
 
 	            })
@@ -237,6 +293,13 @@ public class GroupServiceImpl implements GroupService {
 	                response.setName(group.getName());
 	                response.setDescription(group.getDescription());
 	                response.setCreatedBy(group.getCreatedBy());
+
+                  // Populate members
+                  List<MemberDto> members = memberRepository.findByGroupId(group.getId()).stream()
+                      .map(m -> new MemberDto(m.getUserEmail(), m.getRole()))
+                      .toList();
+                  response.setMembers(members);
+
 	                return response;
 	            })
 	            .toList();

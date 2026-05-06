@@ -16,9 +16,13 @@ public interface MentorService {
 
     MentorResponse getMentorById(Long id);
 
+    List<MentorResponse> getMentorsByStatus(String status);
+
     void addAvailability(AvailabilityRequest request);
 
     ApprovedMentorResponse approveMentor(Long id);
+
+    MentorResponse getMentorByUserId(Long userId);
 
     void updateRating(Long mentorId, Double rating);
 }

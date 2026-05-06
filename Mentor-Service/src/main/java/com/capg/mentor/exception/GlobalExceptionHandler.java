@@ -35,6 +35,17 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
+    // Handle Access Denied
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message("SECURITY ACCESS DENIED: " + ex.getMessage() + ". Check if you have the correct ROLE_USER authority.")
+                .data(null)
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+    }
+
     //Handle Validation Errors (@Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Object>> handleValidation(MethodArgumentNotValidException ex) {
@@ -58,10 +69,12 @@ public class GlobalExceptionHandler {
     //Handle Generic Exceptions (fallback)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGeneric(Exception ex) {
+        System.err.println("CRITICAL EXCEPTION CAUGHT: " + ex.getClass().getName() + " - " + ex.getMessage());
+        ex.printStackTrace();
 
         ApiResponse<Object> response = ApiResponse.builder()
                 .success(false)
-                .message("Something went wrong: " + ex.getMessage())
+                .message("ERROR [" + ex.getClass().getSimpleName() + "]: " + ex.getMessage())
                 .data(null)
                 .build();
 

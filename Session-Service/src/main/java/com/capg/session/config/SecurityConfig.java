@@ -43,7 +43,7 @@ public class SecurityConfig {
 
                     // CORS preflight
                     .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/public/**").permitAll()
+                .requestMatchers("/public/**", "/sessions/all").permitAll()
                 .anyRequest().authenticated()
             )
 

@@ -85,4 +85,8 @@ public class SessionDAO {
 		}
 		return session;
 	}
+
+	public java.util.List<Session> getAllSessions() {
+		return em.createQuery("SELECT s FROM Session s", Session.class).getResultList();
+	}
 }
