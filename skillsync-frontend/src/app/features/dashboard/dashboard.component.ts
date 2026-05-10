@@ -15,7 +15,7 @@ import { AuthService } from '../../core/services/auth.service';
           <h2 class="glow-text">SkillSync</h2>
         </div>
         <nav class="nav-links">
-          <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+          <a routerLink="/dashboard" routerLinkActive="active" >
             <i class="fas fa-home"></i> <span>Dashboard</span>
           </a>
           <a routerLink="/skills" routerLinkActive="active">
@@ -74,7 +74,7 @@ import { AuthService } from '../../core/services/auth.service';
             <div class="stat-card glass-card">
               <div class="stat-icon indigo"><i class="fas fa-graduation-cap"></i></div>
               <div class="stat-data">
-                <span class="label">Skills Earned</span>
+                <span class="label">Skills Available</span>
                 <span class="value">12</span>
               </div>
             </div>

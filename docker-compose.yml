@@ -73,6 +73,9 @@ services:
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle-db:1521/xe
+      - SPRING_DATASOURCE_USERNAME=scott
+      - SPRING_DATASOURCE_PASSWORD=tiger
     networks:
       - microservices-net
 
@@ -89,6 +92,9 @@ services:
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle-db:1521/xe
+      - SPRING_DATASOURCE_USERNAME=scott
+      - SPRING_DATASOURCE_PASSWORD=tiger
     networks:
       - microservices-net
 
@@ -105,6 +111,9 @@ services:
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle-db:1521/xe
+      - SPRING_DATASOURCE_USERNAME=scott
+      - SPRING_DATASOURCE_PASSWORD=tiger
     networks:
       - microservices-net
 
@@ -121,6 +130,9 @@ services:
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle-db:1521/xe
+      - SPRING_DATASOURCE_USERNAME=scott
+      - SPRING_DATASOURCE_PASSWORD=tiger
     networks:
       - microservices-net
 
@@ -137,6 +149,9 @@ services:
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle-db:1521/xe
+      - SPRING_DATASOURCE_USERNAME=scott
+      - SPRING_DATASOURCE_PASSWORD=tiger
     networks:
       - microservices-net
 
@@ -154,6 +169,9 @@ services:
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle-db:1521/xe
+      - SPRING_DATASOURCE_USERNAME=scott
+      - SPRING_DATASOURCE_PASSWORD=tiger
       - SPRING_RABBITMQ_HOST=rabbitmq
     networks:
       - microservices-net
@@ -171,6 +189,9 @@ services:
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle-db:1521/xe
+      - SPRING_DATASOURCE_USERNAME=scott
+      - SPRING_DATASOURCE_PASSWORD=tiger
     networks:
       - microservices-net
 
@@ -188,6 +209,9 @@ services:
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//oracle-db:1521/xe
+      - SPRING_DATASOURCE_USERNAME=scott
+      - SPRING_DATASOURCE_PASSWORD=tiger
       - SPRING_RABBITMQ_HOST=rabbitmq
     networks:
       - microservices-net

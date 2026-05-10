@@ -18,6 +18,8 @@ export class RegisterComponent {
   private router = inject(Router);
 
   errorMessage = '';
+  successMessage = '';
+  isSubmitting = false;
 
   constructor() {
     this.registerForm = this.fb.group({
@@ -30,17 +32,39 @@ export class RegisterComponent {
 
   onSubmit() {
     if (this.registerForm.valid) {
-      this.authService.register(this.registerForm.value).subscribe({
-        next: (res) => {
-          console.log('Registration successful', res);
-          // Redirect to login
-          this.router.navigate(['/login']);
-        },
-        error: (err) => {
-          this.errorMessage = err.error?.message || 'Registration failed. Please try again.';
-          console.error(err);
-        }
-      });
+      this.isSubmitting = true;
+      this.errorMessage = '';
+      this.successMessage = '';
+      this.registerForm.disable(); // Disable form controls properly
+      
+      this.authService.register(this.registerForm.value)
+        .subscribe({
+          next: (res) => {
+            console.log('Registration successful', res);
+            this.successMessage = 'Registration successful! Redirecting to login...';
+            
+            // Redirect to login after 2 seconds
+            setTimeout(() => {
+              this.router.navigate(['/login']);
+            }, 2000);
+          },
+          error: (err) => {
+            console.error('Registration error:', err);
+            this.isSubmitting = false;
+            this.registerForm.enable(); // Re-enable form on error
+            
+            // Handle different error formats
+            if (err.error?.message) {
+              this.errorMessage = err.error.message;
+            } else if (err.error?.error) {
+              this.errorMessage = err.error.error;
+            } else if (typeof err.error === 'string') {
+              this.errorMessage = err.error;
+            } else {
+              this.errorMessage = 'Registration failed. Please try again.';
+            }
+          }
+        });
     }
   }
 }

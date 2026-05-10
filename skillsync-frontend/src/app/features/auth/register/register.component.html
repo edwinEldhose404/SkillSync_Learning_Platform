@@ -6,6 +6,7 @@
     </div>
 
     <div class="error-banner" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div class="success-banner" *ngIf="successMessage">{{ successMessage }}</div>
 
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
       
@@ -40,7 +41,9 @@
           <option value="ADMIN">Administrator</option>
         </select>
       </div>
-      <button type="submit" [disabled]="registerForm.invalid" class="submit-btn">Sign Up</button>
+      <button type="submit" [disabled]="registerForm.invalid || isSubmitting" class="submit-btn">
+        {{ isSubmitting ? 'Creating Account...' : 'Sign Up' }}
+      </button>
     </form>
 
     <div class="footer">
