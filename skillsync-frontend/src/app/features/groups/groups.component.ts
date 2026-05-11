@@ -96,9 +96,9 @@ import { AuthService } from '../../core/services/auth.service';
               Leave
             </button>
             
-            <!-- See Group for Admins -->
-            <button *ngIf="currentUserRole === 'ADMIN'" class="see-btn" (click)="toggleGroupDetails(group.id)">
-              <i class="fas fa-eye"></i> {{ expandedGroupId === group.id ? 'Hide Details' : 'See Group' }}
+            <!-- See Group for Platform Admins and Group Creators -->
+            <button *ngIf="currentUserRole === 'ADMIN' || isAdminOfGroup(group)" class="see-btn" (click)="toggleGroupDetails(group.id)">
+              <i class="fas fa-eye"></i> {{ expandedGroupId === group.id ? 'Hide Details' : 'See Members' }}
             </button>
 
             <!-- Delete for Admins and Owners (Anyone who is the ADMIN of the group) -->
@@ -546,7 +546,12 @@ export class GroupsComponent implements OnInit {
   }
 
   get filteredGroups() {
-    const list = this.activeTab === 'all' ? this.allGroups : this.myGroups;
+    let list = this.allGroups;
+    
+    if (this.activeTab === 'my') {
+      list = this.allGroups.filter(g => this.isMember(g) || this.isAdminOfGroup(g));
+    }
+    
     // Only show groups that have both a name and a creator
     return list.filter(g => g.name && g.createdBy);
   }

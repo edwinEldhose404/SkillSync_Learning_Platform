@@ -13,6 +13,7 @@ interface MentorWithDraft extends MentorResponse {
   draftComment?: string;
   reviews?: ReviewResponse[];
   loadingReviews?: boolean;
+  selectedDate?: string;
 }
 
 @Component({
@@ -48,12 +49,15 @@ interface MentorWithDraft extends MentorResponse {
             <div *ngIf="!loadingMentors && mentors.length === 0" class="empty-state">No mentors found. Be the first!</div>
             
             <div class="mentor-cards">
-              <div *ngFor="let mentor of mentors" class="mentor-card">
+              <div *ngFor="let mentor of filteredMentors" class="mentor-card">
                 <div class="mentor-header">
-                  <div class="mentor-avatar">M{{ mentor.id }}</div>
-                  <div>
-                    <div class="mentor-rate">\${{ mentor.hourlyRate }}/hr</div>
-                    <div class="mentor-rating">★ {{ mentor.rating || 'New' }}</div>
+                  <div class="mentor-avatar">{{ (mentor.email || 'M').charAt(0).toUpperCase() }}</div>
+                  <div class="mentor-info-main">
+                    <h4 class="mentor-display-name">{{ mentor.email || 'Mentor #' + mentor.id }}</h4>
+                    <div class="mentor-sub-info">
+                      <span class="mentor-rate">\${{ mentor.hourlyRate }}/hr</span>
+                      <span class="mentor-rating">★ {{ mentor.rating || 'New' }}</span>
+                    </div>
                   </div>
                 </div>
                 <p class="mentor-bio">"{{ mentor.bio }}"</p>
@@ -68,8 +72,14 @@ interface MentorWithDraft extends MentorResponse {
                     <i class="fas" [class.fa-comments]="expandedMentorId !== mentor.id" [class.fa-chevron-up]="expandedMentorId === mentor.id"></i>
                     {{ expandedMentorId === mentor.id ? 'Close Reviews' : 'See Reviews' }}
                   </button>
-                  <button class="book-btn" (click)="requestSession(mentor.id)">
-                    <i class="fas fa-calendar-plus"></i> Book Session
+                  <div class="booking-input-group" *ngIf="userRole !== 'ADMIN'">
+                    <input type="datetime-local" [(ngModel)]="mentor.selectedDate" class="date-picker">
+                    <button class="book-btn" (click)="requestSession(mentor)">
+                      <i class="fas fa-calendar-plus"></i> Book
+                    </button>
+                  </div>
+                  <button *ngIf="userRole === 'ADMIN'" class="remove-btn" (click)="removeMentor(mentor.id)">
+                    <i class="fas fa-user-slash"></i> Remove Mentor
                   </button>
                 </div>
 
@@ -90,7 +100,12 @@ interface MentorWithDraft extends MentorResponse {
                             ★
                           </span>
                         </div>
-                        <span class="review-date">{{ review.createdAt | date:'shortDate' }}</span>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                          <span class="review-date">{{ review.createdAt | date:'shortDate' }}</span>
+                          <button *ngIf="userRole === 'ADMIN' || review.userId === currentUserId" (click)="deleteReview(review.id, mentor)" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0;" title="Delete Review">
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        </div>
                       </div>
                       <p class="review-comment">"{{ review.comment }}"</p>
                       <span class="reviewer">User #{{ review.userId }}</span>
@@ -106,7 +121,7 @@ interface MentorWithDraft extends MentorResponse {
                   </div>
 
                   <!-- Add Review Form (Independent per mentor) -->
-                  <div class="add-review-form">
+                  <div class="add-review-form" *ngIf="userRole !== 'ADMIN'">
                     <h5>Leave a Review</h5>
                     <div class="rating-input" style="border: 2px solid #fbbf24; padding: 15px; background: rgba(251, 191, 36, 0.05); margin: 15px 0;">
                       <span *ngFor="let s of [1,2,3,4,5]" 
@@ -163,6 +178,27 @@ interface MentorWithDraft extends MentorResponse {
       font-size: 16px;
       margin-bottom: 30px;
     }
+    .error-banner, .success-banner {
+      padding: 15px 20px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideDown 0.4s ease-out;
+    }
+    .error-banner {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .success-banner {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+    }
     .content-grid {
       display: block;
     }
@@ -195,6 +231,46 @@ interface MentorWithDraft extends MentorResponse {
     .mentor-card:hover {
       border-color: var(--primary-color);
       transform: translateY(-2px);
+    }
+    .mentor-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .mentor-avatar {
+      width: 50px;
+      height: 50px;
+      background: var(--primary-gradient);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: white;
+    }
+    .mentor-info-main {
+      flex: 1;
+    }
+    .mentor-display-name {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: white;
+    }
+    .mentor-sub-info {
+      display: flex;
+      gap: 12px;
+      font-size: 13px;
+      margin-top: 2px;
+    }
+    .mentor-rate {
+      color: #10b981;
+      font-weight: 600;
+    }
+    .mentor-rating {
+      color: #fbbf24;
     }
     .mentor-actions {
       display: flex;
@@ -233,6 +309,49 @@ interface MentorWithDraft extends MentorResponse {
     .book-btn:hover {
       background: var(--primary-hover);
       box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    }
+    .booking-input-group {
+      flex: 2;
+      display: flex;
+      gap: 8px;
+    }
+    .date-picker {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 8px;
+      color: white;
+      font-size: 13px;
+      outline: none;
+    }
+    .date-picker:focus {
+      border-color: var(--primary-color);
+    }
+    ::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
+    }
+    .remove-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .remove-btn:hover {
+      background: #ef4444;
+      color: white;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
     }
     .become-mentor-btn {
       padding: 10px 20px;
@@ -408,9 +527,37 @@ export class MentorsComponent implements OnInit {
 
   ngOnInit() {
     this.userRole = this.authService.getRoleFromToken().toUpperCase();
+    
+    // Extract User ID from token directly
+    const token = localStorage.getItem('jwt_token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const id = payload.userId ?? payload.user_id ?? payload.id ?? payload.sub;
+        if (id && !isNaN(Number(id))) {
+          this.currentUserId = Number(id);
+        }
+      } catch (e) {
+        console.error('[SkillSync] Token decode failed:', e);
+      }
+    }
+
     this.loadMentors();
-    this.loadCurrentUser();
     this.loadSkills();
+  }
+
+  get filteredMentors() {
+    let filtered = this.mentors;
+    
+    // 1. Hide current user's profile
+    if (this.currentUserId) {
+      filtered = filtered.filter(m => m.userId !== this.currentUserId);
+    }
+    
+    // 2. Hide any non-APPROVED mentors (secondary safeguard)
+    filtered = filtered.filter(m => m.status === 'APPROVED');
+    
+    return filtered;
   }
 
   get canApply(): boolean {
@@ -422,6 +569,7 @@ export class MentorsComponent implements OnInit {
       next: (skills) => {
         this.availableSkills = skills;
         console.log('[SkillSync] Loaded skills:', skills);
+        this.cdr.detectChanges();
       },
       error: (err) => console.error('[SkillSync] Failed to load skills', err)
     });
@@ -458,54 +606,6 @@ export class MentorsComponent implements OnInit {
     }
   }
 
-  loadCurrentUser() {
-    this.authService.getMyProfile().subscribe({
-      next: (res) => {
-        console.log('[SkillSync] Profile API response:', res);
-        this.userRole = (res?.role || 'USER').toUpperCase();
-        const apiUserId = res?.userId ?? res?.user_id ?? res?.id;
-        if (apiUserId) {
-          this.currentUserId = Number(apiUserId);
-        }
-        this.cdr.detectChanges(); // Force UI to hide the button
-      },
-      error: (err) => {
-        console.warn('[SkillSync] getMyProfile failed:', err);
-        this.userRole = this.authService.getRoleFromToken().toUpperCase();
-        this.cdr.detectChanges(); // Force UI update even on failure
-        // If 404 — profile doesn't exist yet in user-service, auto-create a stub
-        if (err.status === 404) {
-          const email = this.authService.getEmailFromToken();
-          if (!email) {
-            this.errorMessage = 'Could not identify your account. Please log out and log back in.';
-            return;
-          }
-          const stubProfile = {
-            fullName: email.split('@')[0],
-            bio: 'New user',
-            skills: 'General',
-            location: 'Not set',
-            phone: null
-          };
-          this.authService.createProfile(stubProfile).subscribe({
-            next: (created) => {
-              console.log('[SkillSync] Auto-created profile:', created);
-              const createdId = created?.userId ?? created?.user_id ?? created?.id;
-              if (createdId) {
-                this.currentUserId = Number(createdId);
-              }
-            },
-            error: (createErr) => {
-              console.error('[SkillSync] Auto-create profile failed:', createErr);
-              this.errorMessage = 'Could not set up your user profile. Please try refreshing the page.';
-            }
-          });
-        } else {
-          this.errorMessage = 'Could not load your profile. Please try refreshing.';
-        }
-      }
-    });
-  }
 
 
   private cdr = inject(ChangeDetectorRef);
@@ -513,11 +613,11 @@ export class MentorsComponent implements OnInit {
   loadMentors() {
     this.loadingMentors = true;
     console.log('[SkillSync] Fetching mentors...');
+
     this.mentorService.getAllMentors().subscribe({
       next: (res) => {
-        console.log('[SkillSync] Mentors response received:', res);
+        console.log('[SkillSync] Mentors received:', res);
         if (res.success) {
-          // Initialize drafts for each mentor to ensure isolated states
           this.mentors = res.data.map(m => ({
             ...m,
             draftRating: 0,
@@ -526,7 +626,7 @@ export class MentorsComponent implements OnInit {
           this.errorMessage = '';
         }
         this.loadingMentors = false;
-        this.cdr.detectChanges(); // Force UI update
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('[SkillSync] Failed to load mentors', err);
@@ -630,20 +730,43 @@ export class MentorsComponent implements OnInit {
     });
   }
 
-  requestSession(mentorId: number) {
+  deleteReview(reviewId: number, mentor: any) {
+    if (!confirm('Are you sure you want to delete this review?')) return;
+
+    this.reviewService.deleteReview(reviewId).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.successMessage = 'Review deleted successfully.';
+          this.loadReviews(mentor);
+          setTimeout(() => this.successMessage = '', 3000);
+        }
+      },
+      error: (err) => {
+        console.error('[SkillSync] Failed to delete review', err);
+        this.errorMessage = 'Failed to delete review. Check server logs.';
+        setTimeout(() => this.errorMessage = '', 5000);
+      }
+    });
+  }
+
+  requestSession(mentor: any) {
     if (!this.currentUserId) {
       this.errorMessage = 'Please log in to book a session.';
       return;
     }
 
-    // Default to tomorrow for demo purposes, could be replaced with a date picker
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    if (!mentor.selectedDate) {
+      this.errorMessage = 'Please select a date and time for your session.';
+      setTimeout(() => this.errorMessage = '', 4000);
+      return;
+    }
+    
+    this.errorMessage = '';
 
     const dto = {
-      mentor_id: mentorId,
+      mentor_id: mentor.id,
       learner_id: this.currentUserId,
-      session_Date: tomorrow.toISOString()
+      session_Date: new Date(mentor.selectedDate).toISOString()
     };
 
     this.sessionService.requestSession(dto).subscribe({
@@ -654,6 +777,27 @@ export class MentorsComponent implements OnInit {
       error: (err: any) => {
         console.error('[SkillSync] Failed to book session', err);
         this.errorMessage = 'Could not book session. ' + (err.error?.message || '');
+        setTimeout(() => this.errorMessage = '', 5000);
+      }
+    });
+  }
+
+  removeMentor(id: number) {
+    if (!confirm('Are you sure you want to remove this mentor? This action cannot be undone.')) {
+      return;
+    }
+
+    this.mentorService.deleteMentor(id).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.successMessage = 'Mentor removed successfully.';
+          this.loadMentors(); // Refresh the list
+          setTimeout(() => this.successMessage = '', 3000);
+        }
+      },
+      error: (err) => {
+        console.error('[SkillSync] Failed to remove mentor', err);
+        this.errorMessage = 'Failed to remove mentor. Check server logs.';
         setTimeout(() => this.errorMessage = '', 5000);
       }
     });

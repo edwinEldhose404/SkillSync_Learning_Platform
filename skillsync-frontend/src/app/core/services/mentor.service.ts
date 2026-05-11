@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 export interface MentorResponse {
   id: number;
   userId: number;
+  email: string;
   bio: string;
   experience: number;
   rating: number;
@@ -58,5 +59,9 @@ export class MentorService {
 
   getMentorByUserId(userId: number): Observable<ApiResponse<MentorResponse>> {
     return this.http.get<ApiResponse<MentorResponse>>(`${this.apiUrl}/user/${userId}`);
+  }
+
+  deleteMentor(id: number): Observable<ApiResponse<void>> {
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${id}`);
   }
 }

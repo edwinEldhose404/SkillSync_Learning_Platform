@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface MentorSkillRepository extends JpaRepository<MentorSkill, Long> {
     public List<MentorSkill> findByMentorId(Long mentorId);
+    void deleteByMentorId(Long mentorId);
 }

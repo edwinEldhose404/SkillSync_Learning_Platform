@@ -39,4 +39,8 @@ export class ReviewService {
   addReview(request: ReviewRequest): Observable<ApiResponse<ReviewResponse>> {
     return this.http.post<ApiResponse<ReviewResponse>>(this.apiUrl, request);
   }
+
+  deleteReview(reviewId: number): Observable<ApiResponse<void>> {
+    return this.http.delete<ApiResponse<void>>(`${this.apiUrl}/${reviewId}`);
+  }
 }

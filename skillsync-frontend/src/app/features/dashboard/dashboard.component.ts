@@ -15,9 +15,6 @@ import { AuthService } from '../../core/services/auth.service';
           <h2 class="glow-text">SkillSync</h2>
         </div>
         <nav class="nav-links">
-          <a routerLink="/dashboard" routerLinkActive="active" >
-            <i class="fas fa-home"></i> <span>Dashboard</span>
-          </a>
           <a routerLink="/skills" routerLinkActive="active">
             <i class="fas fa-rocket"></i> <span>Skills</span>
           </a>
@@ -27,7 +24,7 @@ import { AuthService } from '../../core/services/auth.service';
           <a routerLink="/groups" routerLinkActive="active">
             <i class="fas fa-users"></i> <span>Groups</span>
           </a>
-          <a routerLink="/sessions" routerLinkActive="active">
+          <a *ngIf="liveRole !== 'ADMIN'" routerLink="/sessions" routerLinkActive="active">
             <i class="fas fa-calendar-check"></i> <span>Sessions</span>
           </a>
           <div class="nav-divider"></div>
@@ -69,31 +66,6 @@ import { AuthService } from '../../core/services/auth.service';
         </header>
 
         <div class="dashboard-body">
-          <!-- Stats Row -->
-          <div class="stats-grid">
-            <div class="stat-card glass-card">
-              <div class="stat-icon indigo"><i class="fas fa-graduation-cap"></i></div>
-              <div class="stat-data">
-                <span class="label">Skills Available</span>
-                <span class="value">12</span>
-              </div>
-            </div>
-            <div class="stat-card glass-card">
-              <div class="stat-icon purple"><i class="fas fa-comments"></i></div>
-              <div class="stat-data">
-                <span class="label">Live Sessions</span>
-                <span class="value">05</span>
-              </div>
-            </div>
-            <div class="stat-card glass-card">
-              <div class="stat-icon blue"><i class="fas fa-project-diagram"></i></div>
-              <div class="stat-data">
-                <span class="label">Active Groups</span>
-                <span class="value">08</span>
-              </div>
-            </div>
-          </div>
-
           <!-- Main Feature Grid -->
           <div class="features-grid">
             <div class="feature-card glass-card" routerLink="/skills">
@@ -132,7 +104,7 @@ import { AuthService } from '../../core/services/auth.service';
               </div>
             </div>
 
-            <div class="feature-card glass-card" routerLink="/sessions">
+            <div *ngIf="liveRole !== 'ADMIN'" class="feature-card glass-card" routerLink="/sessions">
               <div class="card-content">
                 <div class="card-icon"><i class="fas fa-video"></i></div>
                 <h3>My Sessions</h3>
@@ -414,60 +386,16 @@ import { AuthService } from '../../core/services/auth.service';
       cursor: pointer;
     }
 
-    /* Stats Grid */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-
-    .stat-card {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      padding: 20px;
-    }
-
-    .stat-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.4rem;
-    }
-
-    .stat-icon.indigo { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
-    .stat-icon.purple { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
-    .stat-icon.blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-
-    .stat-data {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .stat-data .label {
-      font-size: 13px;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .stat-data .value {
-      font-size: 24px;
-      font-weight: 800;
-    }
-
     /* Features Grid */
     .features-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      display: flex;
+      flex-wrap: wrap;
       gap: 20px;
       margin-bottom: 30px;
     }
 
     .feature-card {
+      flex: 1 1 350px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -640,38 +568,19 @@ export class DashboardComponent implements OnInit {
   private authService = inject(AuthService);
 
   liveRole: string = 'USER';
-  userName: string = 'User';
+  userName: string = '...';
 
   ngOnInit() {
-    this.loadLiveProfile();
+    // Immediate initialization from token to avoid generic placeholder
+    const email = this.authService.getEmailFromToken();
+    if (email) {
+      this.userName = email.split('@')[0];
+    }
+    
+    // Set role from token
+    this.liveRole = (this.getRoleFromToken() || 'USER').toUpperCase();
   }
 
-  loadLiveProfile() {
-    const tokenRole = (this.getRoleFromToken() || 'USER').toUpperCase();
-    this.liveRole = tokenRole; 
-
-    this.authService.getMyProfile().subscribe({
-      next: (profile) => {
-        const apiRole = (profile.role || 'USER').toUpperCase();
-        
-        console.log(`[SkillSync] Role Sync - Token: ${tokenRole}, API: ${apiRole}`);
-
-        if (tokenRole === 'ADMIN') {
-          this.liveRole = 'ADMIN';
-        } else if (apiRole === 'ADMIN' || apiRole === 'MENTOR') {
-          this.liveRole = apiRole;
-        } else {
-          this.liveRole = tokenRole;
-        }
-
-        this.userName = profile.fullName || this.authService.getEmailFromToken() || 'User';
-      },
-      error: (err) => {
-        this.liveRole = tokenRole;
-        this.userName = this.authService.getEmailFromToken() || 'User';
-      }
-    });
-  }
 
   get isAdmin(): boolean {
     return this.liveRole === 'ADMIN';

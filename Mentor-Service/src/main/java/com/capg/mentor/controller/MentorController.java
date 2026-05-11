@@ -54,7 +54,6 @@ public class MentorController {
         System.out.println("DEBUG: Received applyForMentor request for user: " + request.getUserId());
         // Inject logged-in user email from JWT
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        request.setEmail(email);
 
         MentorResponse response = mentorService.applyForMentor(request);
 
@@ -191,6 +190,23 @@ public class MentorController {
     public void updateRating(@PathVariable Long mentorId,
                                        @RequestParam Double rating) {
         mentorService.updateRating(mentorId, rating);
+    }
+
+    /**
+     * Remove a mentor (Admin only)
+     * 
+     * @param id Mentor ID
+     * @return ApiResponse indicating success
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> deleteMentor(@PathVariable Long id) {
+        mentorService.deleteMentor(id);
+        return ApiResponse.<Void>builder()
+                .success(true)
+                .message("Mentor removed successfully")
+                .data(null)
+                .build();
     }
 
 

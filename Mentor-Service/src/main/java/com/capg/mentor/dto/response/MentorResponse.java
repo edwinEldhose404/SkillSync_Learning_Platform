@@ -12,6 +12,7 @@ import java.util.List;
 public class MentorResponse{
     private Long id;
     private Long userId;
+
     private String bio;
     private Integer experience;
     private Double rating;

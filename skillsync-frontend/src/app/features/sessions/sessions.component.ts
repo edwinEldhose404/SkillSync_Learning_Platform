@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { SessionService, Session } from '../../core/services/session.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MentorService, MentorResponse, ApiResponse } from '../../core/services/mentor.service';
@@ -60,7 +60,7 @@ import { MentorService, MentorResponse, ApiResponse } from '../../core/services/
             <div class="users-involved">
               <div class="user-pill" [class.highlight]="session.mentor_id === mentorId">
                 <i class="fas fa-chalkboard-teacher"></i>
-                <span>Mentor: User #{{ session.mentor_id }}</span>
+                <span>Mentor #{{ session.mentor_id }}</span>
               </div>
               <div class="user-pill" [class.highlight]="session.learner_id === currentUserId">
                 <i class="fas fa-user-graduate"></i>
@@ -309,12 +309,14 @@ import { MentorService, MentorResponse, ApiResponse } from '../../core/services/
       display: flex;
       align-items: center;
       gap: 10px;
-      color: #a5b4fc;
-      background: rgba(99, 102, 241, 0.1);
-      padding: 12px;
-      border-radius: 10px;
+      color: #fff;
+      background: rgba(99, 102, 241, 0.2);
+      padding: 14px;
+      border-radius: 12px;
       margin-bottom: 20px;
-      font-weight: 500;
+      font-weight: 700;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
 
     .session-actions {
@@ -398,6 +400,7 @@ import { MentorService, MentorResponse, ApiResponse } from '../../core/services/
 export class SessionsComponent implements OnInit {
   private sessionService = inject(SessionService);
   private authService = inject(AuthService);
+  private router = inject(Router);
 
   sessions: Session[] = [];
   activeTab: 'all' | 'pending' | 'active' | 'completed' = 'all';
@@ -410,6 +413,14 @@ export class SessionsComponent implements OnInit {
 
   ngOnInit() {
     this.currentUserRole = this.getUserRoleFromToken() || '';
+    
+    // Redirect admins if they somehow reach this page
+    if (this.currentUserRole === 'ADMIN') {
+      console.warn('[SkillSync] Admins are not allowed to view sessions. Redirecting...');
+      this.router.navigate(['/dashboard']);
+      return;
+    }
+
     this.loadCurrentUser();
   }
 
@@ -427,34 +438,36 @@ export class SessionsComponent implements OnInit {
   private mentorService = inject(MentorService);
 
   loadCurrentUser() {
-    this.authService.getMyProfile().subscribe({
-      next: (res) => {
-        const apiUserId = res?.userId ?? res?.user_id ?? res?.id;
-        if (apiUserId) {
-          this.currentUserId = Number(apiUserId);
-          
-          // Always attempt to fetch Mentor ID to account for stale tokens
-          this.mentorService.getMentorByUserId(this.currentUserId).subscribe({
-            next: (mRes: ApiResponse<MentorResponse>) => {
-              this.mentorId = mRes.data?.id || null;
-              if (this.mentorId) {
-                console.log('[SkillSync] Resolved Mentor ID:', this.mentorId, 'for User:', this.currentUserId);
-              }
-              this.loadSessions();
-            },
-            error: () => {
-              // Not a mentor, just load sessions as a regular user
-              this.loadSessions();
-            }
-          });
-        } else {
-          this.showError('Could not identify user profile. Please update your profile.');
-        }
-      },
-      error: () => {
-        this.showError('Could not load user profile. Please ensure you have set up a profile.');
+    const token = localStorage.getItem('jwt_token');
+    if (!token) {
+      this.showError('Authentication required. Please log in again.');
+      return;
+    }
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const apiUserId = payload.userId || payload.user_id || payload.id || payload.sub;
+      
+      if (apiUserId) {
+        this.currentUserId = Number(apiUserId);
+        
+        // Attempt to fetch Mentor ID
+        this.mentorService.getMentorByUserId(this.currentUserId).subscribe({
+          next: (mRes: ApiResponse<MentorResponse>) => {
+            this.mentorId = mRes.data?.id || null;
+            this.loadSessions();
+          },
+          error: () => {
+            this.loadSessions();
+          }
+        });
+      } else {
+        this.showError('Identity not found in token. Please log in again.');
       }
-    });
+    } catch (err) {
+      console.error('[SkillSync] Token parse error:', err);
+      this.showError('Could not identify user. Please log in again.');
+    }
   }
 
   loadSessions() {

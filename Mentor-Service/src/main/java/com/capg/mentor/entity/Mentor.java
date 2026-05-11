@@ -21,6 +21,8 @@ public class Mentor {
 
     @Column(nullable = false, unique = true)
     private Long userId;
+
+
     private String bio;
     private Integer experience;
     private Double rating;

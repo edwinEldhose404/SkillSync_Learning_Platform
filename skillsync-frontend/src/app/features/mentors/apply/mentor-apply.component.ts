@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -268,6 +268,7 @@ export class MentorApplyComponent implements OnInit {
   private skillService = inject(SkillService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
   
   availableSkills: Skill[] = [];
   request: MentorRequest = {
@@ -295,6 +296,7 @@ export class MentorApplyComponent implements OnInit {
       next: (skills: Skill[]) => {
         this.availableSkills = skills;
         console.log('[SkillSync] Skills loaded:', skills.length);
+        this.cdr.detectChanges();
       },
       error: (err: any) => console.error('[SkillSync] Failed to load skills', err)
     });

@@ -10,4 +10,6 @@ public interface ReviewService {
     ReviewResponse addReview(ReviewRequest request);
 
     List<ReviewResponse> getReviewsByMentor(Long mentorId);
+
+    void deleteReview(Long reviewId);
 }

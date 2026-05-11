@@ -2,6 +2,7 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MentorService, MentorResponse } from '../../core/services/mentor.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -48,7 +49,7 @@ import { MentorService, MentorResponse } from '../../core/services/mentor.servic
           <div class="glass-card app-card" *ngFor="let app of pendingMentors">
             <div class="app-header">
               <div class="user-info">
-                <h3>User ID: {{ app.userId }}</h3>
+                <h3>{{ app.email || 'Mentor #' + app.id }}</h3>
                 <span class="exp-badge">{{ app.experience }} Years Exp</span>
               </div>
               <div class="status-pill" [ngClass]="(app.status || 'PENDING').toLowerCase()">{{ app.status || 'PENDING' }}</div>
@@ -359,7 +360,7 @@ export class AdminDashboardComponent implements OnInit {
         
         // Refresh counts whenever we change something
         this.refreshCounts();
-        this.cdr.detectChanges(); 
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.isLoading = false;

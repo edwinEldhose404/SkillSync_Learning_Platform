@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SkillSync - ER Diagram</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; font-family: 'Segoe UI', sans-serif; color: #e2e8f0; min-height: 100vh; }
+
+  header { padding: 24px 40px; background: linear-gradient(135deg, #1a1f2e, #252b3b); border-bottom: 1px solid #2d3a52; }
+  header h1 { font-size: 1.6rem; font-weight: 700; background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  header p { font-size: 0.85rem; color: #64748b; margin-top: 4px; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; padding: 14px 40px; background: #131722; border-bottom: 1px solid #1e2740; align-items: center; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #94a3b8; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+
+  #canvas-wrap { position: relative; width: 100%; overflow-x: auto; overflow-y: auto; }
+  svg#lines { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 0; }
+
+  /* Fixed 4-col grid, each col exactly 260px wide */
+  .diagram { display: grid; grid-template-columns: repeat(4, 260px); gap: 120px; padding: 48px 60px; min-width: 1560px; position: relative; z-index: 1; }
+
+  .mentor .table-card + .table-card,
+  .group  .table-card + .table-card { margin-top: 90px; }
+
+  .service-col { display: flex; flex-direction: column; gap: 90px; }
+
+  .service-label {
+    font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.4px; margin-bottom: 6px; padding: 3px 8px;
+    border-radius: 3px; display: inline-block; width: 260px;
+  }
+
+  /* Every card: fixed width + no border-radius = sharp cuboid */
+  .table-card {
+    width: 260px;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #2a3352;
+    box-shadow: 2px 4px 16px rgba(0,0,0,0.5);
+    transition: box-shadow .2s;
+  }
+  .table-card:hover { box-shadow: 3px 6px 24px rgba(0,0,0,0.7); }
+
+  /* Header: fixed height */
+  .table-header {
+    height: 38px;
+    padding: 0 14px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .table-name { font-size: 0.9rem; }
+  .db-badge { display: none; }
+
+  /* Each field row: fixed height so all rows are uniform */
+  .field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 30px;
+    padding: 0 14px;
+    font-size: 0.76rem;
+    border-top: 1px solid #1e2a42;
+  }
+  .field-row:hover { background: #1c2640; }
+
+  .field-key {
+    font-size: 0.62rem; font-weight: 700;
+    padding: 2px 5px; border-radius: 2px;
+    width: 26px; text-align: center; flex-shrink: 0;
+  }
+  .pk  { background: #78350f; color: #fcd34d; }
+  .fk  { background: #1e3a5f; color: #60a5fa; }
+  .fk0 { width: 26px; }   /* placeholder to keep alignment */
+  .field-name { color: #e2e8f0; font-weight: 500; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .field-type { color: #475569; font-size: 0.68rem; white-space: nowrap; }
+
+  /* Service colour themes */
+  .auth    .table-header { background: linear-gradient(135deg,#431407,#7c2d12); color: #fed7aa; }
+  .user    .table-header { background: linear-gradient(135deg,#052e16,#14532d); color: #bbf7d0; }
+  .mentor  .table-header { background: linear-gradient(135deg,#2e1065,#4c1d95); color: #ddd6fe; }
+  .skill   .table-header { background: linear-gradient(135deg,#082f49,#0c4a6e); color: #bae6fd; }
+  .review  .table-header { background: linear-gradient(135deg,#4c0519,#881337); color: #fecdd3; }
+  .session .table-header { background: linear-gradient(135deg,#422006,#713f12); color: #fef08a; }
+  .group   .table-header { background: linear-gradient(135deg,#022c22,#064e3b); color: #a7f3d0; }
+
+  .auth    .service-label { background: #431407; color: #f97316; }
+  .user    .service-label { background: #052e16; color: #22c55e; }
+  .mentor  .service-label { background: #2e1065; color: #a78bfa; }
+  .skill   .service-label { background: #082f49; color: #38bdf8; }
+  .review  .service-label { background: #4c0519; color: #fb7185; }
+  .session .service-label { background: #422006; color: #facc15; }
+  .group   .service-label { background: #022c22; color: #34d399; }
+
+  .rel-line { stroke-width: 1.5; fill: none; stroke-dasharray: 5,4; opacity: 0.5; }
+
+  footer { text-align: center; padding: 20px; color: #334155; font-size: 0.75rem; border-top: 1px solid #1e2740; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SkillSync - Entity Relationship Diagram</h1>
+  <p>Logical relationships across all microservices (cross-service links via shared IDs / emails)</p>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div> authentication-service</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> user-service</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div> mentor-service</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#38bdf8"></div> skill-service</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#fb7185"></div> review-service</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#facc15"></div> session-service</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div> group-service</div>
+  <div class="legend-item" style="margin-left:auto"><span class="field-key pk">PK</span>&nbsp;Primary Key</div>
+  <div class="legend-item"><span class="field-key fk">FK</span>&nbsp;Foreign Key (logical)</div>
+</div>
+
+<div id="canvas-wrap">
+  <svg id="lines"></svg>
+  <div class="diagram">
+
+    <!-- COL 1: Auth + User -->
+    <div class="service-col">
+
+      <div class="auth">
+        <span class="service-label">authentication-service</span>
+        <div class="table-card" id="t-auth-users">
+          <div class="table-header"><span class="table-name">auth_users</span><span class="db-badge">auth_db</span></div>
+          <div class="table-body">
+            <div class="field-row"><span class="field-key pk">PK</span><span class="field-name" id="f-auth-id">id</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">name</span><span class="field-type">VARCHAR</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">email</span><span class="field-type">VARCHAR UNIQUE</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">password</span><span class="field-type">VARCHAR</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">role</span><span class="field-type">ENUM</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">isActive</span><span class="field-type">BOOLEAN</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="user">
+        <span class="service-label">user-service</span>
+        <div class="table-card" id="t-user-profiles">
+          <div class="table-header"><span class="table-name">user_profiles</span><span class="db-badge">user_db</span></div>
+          <div class="table-body">
+            <div class="field-row"><span class="field-key pk">PK</span><span class="field-name">id</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk">FK</span><span class="field-name" id="f-up-email">email</span><span class="field-type">VARCHAR</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">fullName</span><span class="field-type">VARCHAR</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">role</span><span class="field-type">VARCHAR</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">phone</span><span class="field-type">VARCHAR</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">bio</span><span class="field-type">TEXT</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">skills</span><span class="field-type">TEXT</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">location</span><span class="field-type">VARCHAR</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">active</span><span class="field-type">BOOLEAN</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- COL 2: Mentor -->
+    <div class="service-col">
+
+      <div class="mentor">
+        <span class="service-label">mentor-service</span>
+        <div class="table-card" id="t-mentor">
+          <div class="table-header"><span class="table-name">mentor</span><span class="db-badge">mentor_db</span></div>
+          <div class="table-body">
+            <div class="field-row"><span class="field-key pk">PK</span><span class="field-name" id="f-mentor-id">mentorId</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk">FK</span><span class="field-name" id="f-mentor-uid">userId</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">bio</span><span class="field-type">TEXT</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">experience</span><span class="field-type">INT</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">rating</span><span class="field-type">DOUBLE</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">hourlyRate</span><span class="field-type">DOUBLE</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">status</span><span class="field-type">ENUM</span></div>
+          </div>
+        </div>
+
+        <div class="table-card" id="t-mentor-skill">
+          <div class="table-header"><span class="table-name">mentor_skill</span><span class="db-badge">mentor_db</span></div>
+          <div class="table-body">
+            <div class="field-row"><span class="field-key pk">PK</span><span class="field-name">id</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk">FK</span><span class="field-name" id="f-ms-mid">mentorId</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk">FK</span><span class="field-name" id="f-ms-sid">skillId</span><span class="field-type">BIGINT</span></div>
+          </div>
+        </div>
+
+        <div class="table-card" id="t-availability">
+          <div class="table-header"><span class="table-name">availability</span><span class="db-badge">mentor_db</span></div>
+          <div class="table-body">
+            <div class="field-row"><span class="field-key pk">PK</span><span class="field-name">id</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk">FK</span><span class="field-name" id="f-av-mid">mentorId</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">startTime</span><span class="field-type">DATETIME</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">endTime</span><span class="field-type">DATETIME</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- COL 3: Skill + Review + Session -->
+    <div class="service-col">
+
+      <div class="skill">
+        <span class="service-label">skill-service</span>
+        <div class="table-card" id="t-skills">
+          <div class="table-header"><span class="table-name">skills</span><span class="db-badge">skill_db</span></div>
+          <div class="table-body">
+            <div class="field-row"><span class="field-key pk">PK</span><span class="field-name" id="f-skill-id">id</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">name</span><span class="field-type">VARCHAR UNIQUE</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">category</span><span class="field-type">VARCHAR</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="review">
+        <span class="service-label">review-service</span>
+        <div class="table-card" id="t-reviews">
+          <div class="table-header"><span class="table-name">reviews</span><span class="db-badge">review_db</span></div>
+          <div class="table-body">
+            <div class="field-row"><span class="field-key pk">PK</span><span class="field-name">id</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk">FK</span><span class="field-name" id="f-rv-mid">mentorId</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk">FK</span><span class="field-name" id="f-rv-uid">userId</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">rating</span><span class="field-type">INT (1-5)</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">comment</span><span class="field-type">TEXT</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">createdAt</span><span class="field-type">DATETIME</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="session">
+        <span class="service-label">session-service</span>
+        <div class="table-card" id="t-sessions">
+          <div class="table-header"><span class="table-name">sessions</span><span class="db-badge">session_db</span></div>
+          <div class="table-body">
+            <div class="field-row"><span class="field-key pk">PK</span><span class="field-name">id</span><span class="field-type">INT</span></div>
+            <div class="field-row"><span class="field-key fk">FK</span><span class="field-name" id="f-se-mid">mentor_id</span><span class="field-type">INT</span></div>
+            <div class="field-row"><span class="field-key fk">FK</span><span class="field-name" id="f-se-lid">learner_id</span><span class="field-type">INT</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">session_Date</span><span class="field-type">DATE</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">status</span><span class="field-type">VARCHAR</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">created_at</span><span class="field-type">DATE</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- COL 4: Group -->
+    <div class="service-col">
+
+      <div class="group">
+        <span class="service-label">group-service</span>
+        <div class="table-card" id="t-groups">
+          <div class="table-header"><span class="table-name">groups</span><span class="db-badge">group_db</span></div>
+          <div class="table-body">
+            <div class="field-row"><span class="field-key pk">PK</span><span class="field-name" id="f-grp-id">id</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">name</span><span class="field-type">VARCHAR</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">description</span><span class="field-type">TEXT</span></div>
+            <div class="field-row"><span class="field-key fk">FK</span><span class="field-name" id="f-grp-cb">createdBy</span><span class="field-type">VARCHAR (email)</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">active</span><span class="field-type">BOOLEAN</span></div>
+          </div>
+        </div>
+
+        <div class="table-card" id="t-group-members">
+          <div class="table-header"><span class="table-name">group_members</span><span class="db-badge">group_db</span></div>
+          <div class="table-body">
+            <div class="field-row"><span class="field-key pk">PK</span><span class="field-name">id</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk">FK</span><span class="field-name" id="f-gm-gid">groupId</span><span class="field-type">BIGINT</span></div>
+            <div class="field-row"><span class="field-key fk">FK</span><span class="field-name" id="f-gm-ue">userEmail</span><span class="field-type">VARCHAR</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">role</span><span class="field-type">VARCHAR</span></div>
+            <div class="field-row"><span class="field-key fk0"></span><span class="field-name">active</span><span class="field-type">BOOLEAN</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- end .diagram -->
+</div><!-- end #canvas-wrap -->
+
+<footer>SkillSync Learning Platform &middot; ER Diagram &middot; Cross-service links are logical (no DB-level foreign keys)</footer>
+
+<script>
+window.addEventListener('load', () => {
+  const wrap = document.getElementById('canvas-wrap');
+  const svg  = document.getElementById('lines');
+  const W = wrap.scrollWidth;
+  const H = wrap.scrollHeight;
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.style.width  = W + 'px';
+  svg.style.height = H + 'px';
+
+  // Walk offsetParent chain up to canvas-wrap to get position relative to it
+  function relativePos(el) {
+    let x = 0, y = 0, node = el;
+    while (node && node !== wrap) {
+      x += node.offsetLeft;
+      y += node.offsetTop;
+      node = node.offsetParent;
+    }
+    return { x, y, w: el.offsetWidth, h: el.offsetHeight };
+  }
+
+  function midRight(el) {
+    if (!el) return null;
+    const p = relativePos(el);
+    return { x: p.x + p.w, y: p.y + p.h / 2 };
+  }
+  function midLeft(el) {
+    if (!el) return null;
+    const p = relativePos(el);
+    return { x: p.x, y: p.y + p.h / 2 };
+  }
+
+  const relations = [
+    { from: 'f-auth-id',   to: 'f-mentor-uid', color: '#f97316' },
+    { from: 'f-auth-id',   to: 'f-rv-uid',     color: '#f97316' },
+    { from: 'f-auth-id',   to: 'f-se-lid',     color: '#f97316' },
+    { from: 'f-auth-id',   to: 'f-up-email',   color: '#22c55e' },
+    { from: 'f-auth-id',   to: 'f-gm-ue',      color: '#f97316' },
+    { from: 'f-mentor-id', to: 'f-ms-mid',     color: '#a78bfa' },
+    { from: 'f-mentor-id', to: 'f-av-mid',     color: '#a78bfa' },
+    { from: 'f-mentor-id', to: 'f-rv-mid',     color: '#a78bfa' },
+    { from: 'f-mentor-id', to: 'f-se-mid',     color: '#a78bfa' },
+    { from: 'f-skill-id',  to: 'f-ms-sid',     color: '#38bdf8' },
+    { from: 'f-grp-id',    to: 'f-gm-gid',     color: '#34d399' },
+  ];
+
+  relations.forEach(rel => {
+    const fromEl = document.getElementById(rel.from);
+    const toEl   = document.getElementById(rel.to);
+    if (!fromEl || !toEl) return;
+
+    const from = midRight(fromEl);
+    const to   = midLeft(toEl);
+    if (!from || !to) return;
+
+    const dx = Math.abs(to.x - from.x) * 0.5;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M${from.x},${from.y} C${from.x+dx},${from.y} ${to.x-dx},${to.y} ${to.x},${to.y}`);
+    path.setAttribute('class', 'rel-line');
+    path.setAttribute('stroke', rel.color);
+    svg.appendChild(path);
+
+    [from, to].forEach(pt => {
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y); c.setAttribute('r', 3);
+      c.setAttribute('fill', rel.color); c.setAttribute('opacity', '0.7');
+      svg.appendChild(c);
+    });
+  });
+});
+</script>
+</body>
+</html>

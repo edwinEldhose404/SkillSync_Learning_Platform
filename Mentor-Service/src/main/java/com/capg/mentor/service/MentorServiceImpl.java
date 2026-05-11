@@ -145,7 +145,7 @@ public class MentorServiceImpl implements MentorService {
     @Override
     public List<MentorResponse> getAllMentors() {
 
-        List<Mentor> mentors = mentorRepository.findAll();
+        List<Mentor> mentors = mentorRepository.findByStatus(MentorStatus.APPROVED);
 
         return mentors.stream().map(mentor -> {
 
@@ -287,6 +287,24 @@ public class MentorServiceImpl implements MentorService {
                 .toList();
 
         return MentorMapper.toResponse(mentor, skillIds, skillClient);
+    }
+
+    @Override
+    @Transactional
+    public void deleteMentor(Long id) {
+        Mentor mentor = mentorRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Mentor not found"));
+        
+        // 1. Delete associated skills
+        mentorSkillRepository.deleteByMentorId(id);
+        
+        // 2. Delete availability
+        availabilityRepository.deleteByMentorId(id);
+        
+        // 3. Delete mentor record
+        mentorRepository.delete(mentor);
+        
+        System.out.println("[SkillSync] Admin removed mentor ID: " + id);
     }
 
 

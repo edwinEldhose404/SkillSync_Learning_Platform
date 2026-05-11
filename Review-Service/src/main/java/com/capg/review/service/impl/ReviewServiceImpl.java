@@ -62,4 +62,23 @@ public class ReviewServiceImpl implements ReviewService {
                 .map(ReviewMapper::toResponse)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    @Transactional
+    public void deleteReview(Long reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review not found"));
+
+        Long mentorId = review.getMentorId();
+        reviewRepository.delete(review);
+
+        // Recalculate average rating
+        List<Review> reviews = reviewRepository.findByMentorId(mentorId);
+        double avgRating = reviews.stream()
+                .mapToInt(Review::getRating)
+                .average()
+                .orElse(0.0);
+
+        mentorClient.updateMentorRating(mentorId, avgRating);
+    }
 }

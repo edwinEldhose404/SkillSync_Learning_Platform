@@ -78,4 +78,19 @@ public class ReviewController {
                 .data(reviews)
                 .build();
     }
+
+    /**
+     * Delete a review (Admin or authorized user)
+     */
+    @org.springframework.web.bind.annotation.DeleteMapping("/{reviewId}")
+    public ApiResponse<Void> deleteReview(@PathVariable final Long reviewId) {
+        log.info("Received request to delete review ID: {}", reviewId);
+        reviewService.deleteReview(reviewId);
+
+        return ApiResponse.<Void>builder()
+                .success(true)
+                .message("Review deleted successfully")
+                .data(null)
+                .build();
+    }
 }

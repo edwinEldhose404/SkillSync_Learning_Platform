@@ -25,4 +25,6 @@ public interface MentorService {
     MentorResponse getMentorByUserId(Long userId);
 
     void updateRating(Long mentorId, Double rating);
+
+    void deleteMentor(Long id);
 }

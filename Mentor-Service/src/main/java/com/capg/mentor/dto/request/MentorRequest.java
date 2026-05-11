@@ -27,6 +27,4 @@ public class MentorRequest {
     @NotEmpty
     private List<Long> skillIds;
 
-    @NotBlank
-    private String email;
 }

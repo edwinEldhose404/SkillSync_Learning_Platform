@@ -180,7 +180,7 @@ public class GroupController {
      * 
      * @return List of GroupResponse objects for the user
      */
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'MENTOR')")
     @GetMapping("/my")
     public List<GroupResponse> getMyGroups() {
 
