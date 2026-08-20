@@ -18,70 +18,76 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 
+//tell spring to check this config
 @Configuration
 public class SecurityConfig {
 
+    //custom filter
     private final JwtFilter jwtFilter;
 
+    //constructor injection
     public SecurityConfig(JwtFilter jwtFilter) {
         this.jwtFilter = jwtFilter;
     }
 
-    // âœ… Password Encoder
+    //Password Encoder
+    //used for storing passwords as hash as its irreversible
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // âœ… Security Config
+    //Security Config
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-            .cors(Customizer.withDefaults())
-            .csrf(csrf -> csrf.disable())
+            .cors(Customizer.withDefaults())//enable CORS support
+            .csrf(csrf -> csrf.disable())//disable as we are using stateless JWT API
 
-            // âš ï¸ VERY IMPORTANT for APIs
+            //Stateless so authentication not maintained with session
+            //instead every request carries authentication info
             .sessionManagement(session -> 
                 session.sessionCreationPolicy(
                     org.springframework.security.config.http.SessionCreationPolicy.STATELESS
                 )
             )
 
+            //allow certain requests to be available publically
             .authorizeHttpRequests(auth -> auth
-                    // Swagger
-                    .requestMatchers(
-                            "/v3/api-docs/**",
-                            "/swagger-ui/**",
-                            "/swagger-ui.html",
-                            "/swagger-resources/**",
-                            "/webjars/**"
-                    ).permitAll()
 
-                    // CORS preflight
-                    .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/swagger-resources/**",
+                        "/webjars/**"
+                ).permitAll()
+
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()//allow OPTIONS request thru
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
-                .anyRequest().authenticated()
+                .anyRequest().authenticated()//if previous rules don't mention, make sure is authenticated
             )
 
+            //make sure jwtfilter is run before userpassauthfilter
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
+        return http.build();//build filterchain
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+        configuration.setAllowedOrigins(List.of("http://localhost:4200"));//Angular frontend
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedHeaders(List.of("*"));//allows all headers from frontend(for JWT requests)
         configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setExposedHeaders(List.of("Authorization"));//give access to authorization headers
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", configuration);//apply CORS config to all endpoints
         return source;
     }
 }

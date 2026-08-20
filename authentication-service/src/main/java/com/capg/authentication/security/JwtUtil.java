@@ -8,15 +8,13 @@ import java.util.Date;
 
 public class JwtUtil {
 
-    // ✅ FIXED: constant secret key (must be >= 32 chars)
     private static final String SECRET = "mysecretkeymysecretkeymysecretkey123";
 
     private static final SecretKey SECRET_KEY =
-            Keys.hmacShaKeyFor(SECRET.getBytes());
+            Keys.hmacShaKeyFor(SECRET.getBytes());//make cryptographic key for HMAC algo.
 
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60; // 1 hour
+    private static final long EXPIRATION_TIME = 1000 * 60 * 30; // 30 min
 
-    // ✅ Generate token with role and userId
     public static String generateToken(String email, String role, Long userId) {
 
         return Jwts.builder()
@@ -26,20 +24,18 @@ public class JwtUtil {
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(SECRET_KEY)
-                .compact();
+                .compact();// build JWT and compact into final string form
     }
 
-    // ✅ FIXED: extract email correctly
     public static String extractEmail(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(SECRET_KEY)
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
-                .getSubject(); // 🔥 THIS WAS WRONG
+                .getSubject();
     }
 
-    // ✅ extract role
     public static String extractRole(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(SECRET_KEY)
@@ -49,7 +45,6 @@ public class JwtUtil {
                 .get("role", String.class);
     }
 
-    // ✅ extract userId
     public static Long extractUserId(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(SECRET_KEY)
@@ -59,7 +54,6 @@ public class JwtUtil {
                 .get("userId", Long.class);
     }
 
-    // ✅ validate token
     public static boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()

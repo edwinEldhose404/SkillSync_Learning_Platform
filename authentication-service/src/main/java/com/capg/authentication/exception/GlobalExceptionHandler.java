@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 
-@RestControllerAdvice
+@RestControllerAdvice//centralize exception handling
 public class GlobalExceptionHandler {
 
     // Handle custom exception

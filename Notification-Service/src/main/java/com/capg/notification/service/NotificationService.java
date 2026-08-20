@@ -7,21 +7,12 @@ import org.springframework.stereotype.Service;
 import com.capg.notification.event.SessionEvent;
 import com.capg.notification.exception.EventProcessingException;
 
-/**
- * Notification Service
- * Handles processing of session events and sending notifications
- */
+
 @Service
 public class NotificationService {
     
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
 
-    /**
-     * Handle session events and send appropriate notifications
-     * 
-     * @param event the SessionEvent to process
-     * @throws EventProcessingException if event processing fails
-     */
     public void handle(SessionEvent event) {
         
         if (event == null) {
@@ -68,6 +59,7 @@ public class NotificationService {
         }
     }
     
+    //logging event - can be changed to send emails/SMS
     private void handleSessionRequestedNotification(SessionEvent event) {
         System.out.println("Notification: Session Booked " + event.getSessionId());
         logger.info("Session requested notification sent for session ID: {}", event.getSessionId());

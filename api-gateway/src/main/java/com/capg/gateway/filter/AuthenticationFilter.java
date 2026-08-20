@@ -1,7 +1,7 @@
 package com.capg.gateway.filter;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
+import javax.crypto.SecretKey;
+
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -10,30 +10,19 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import reactor.core.publisher.Mono;
 
-import javax.crypto.SecretKey;
 
-/**
- * Gateway Authentication Filter
- * Handles JWT token verification for incoming requests
- *
- * Exception Handling:
- * - Missing/Invalid Token: Returns HTTP 401 Unauthorized via unAuthorized()
- */
 @Component
 public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     private static final String SECRET = "mysecretkeymysecretkeymysecretkey123";
     private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET.getBytes());
 
-    /**
-     * Filters incoming HTTP requests and validates Authorization headers
-     *
-     * @param exchange ServerWebExchange
-     * @param chain GatewayFilterChain
-     * @return Mono<Void> indicating the completion of request processing
-     */
+    
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
@@ -64,7 +53,6 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
         try {
             Jwts.parserBuilder().setSigningKey(SECRET_KEY).build().parseClaimsJws(token);
-            // In a more robust system, you might extract user roles from token here and inject them as headers 
         } catch (Exception e) {
             return unAuthorized(exchange.getResponse(), "Invalid or Expired JWT Token");
         }
@@ -72,13 +60,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         return chain.filter(exchange);
     }
 
-    /**
-     * Helper method to return HTTP 401 Unauthorized Response
-     *
-     * @param response ServerHttpResponse
-     * @param message Error message
-     * @return Mono<Void> indicating the completion of response formulation
-     */
+    
     private Mono<Void> unAuthorized(ServerHttpResponse response, String message) {
         response.setStatusCode(HttpStatus.UNAUTHORIZED);
         return response.setComplete();
